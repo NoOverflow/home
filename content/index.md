@@ -1,5 +1,5 @@
 ---
-title: Welcome to Quartz
+title: Welcome to Quartz, this has been synced
 ---
 
 This is a blank Quartz installation.
