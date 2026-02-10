@@ -1,5 +1,6 @@
 name: Docker build & push image
-
+permissions:
+  packages: write
 on:
   push:
     branches: [v4]
