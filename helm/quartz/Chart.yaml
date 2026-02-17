@@ -1,0 +1,12 @@
+apiVersion: v2
+name: quartz
+description: A Helm chart for deploying Quartz application using the common library
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+dependencies:
+  - name: app-template
+    version: "4.6.2"
+    alias: quartz
+    repository: "https://bjw-s-labs.github.io/helm-charts/"
