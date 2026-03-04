@@ -54,3 +54,7 @@ declare module "vfile" {
     relativePath: FilePath
   }
 }
+
+export function Plugin(): import("./types").QuartzEmitterPluginInstance {
+    throw new Error("Function not implemented.")
+}
