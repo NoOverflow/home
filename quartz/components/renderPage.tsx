@@ -11,6 +11,7 @@ import { GlobalConfiguration } from "../cfg"
 import { i18n } from "../i18n"
 import { styleText } from "util"
 
+
 interface RenderComponents {
   head: QuartzComponent
   header: QuartzComponent[]
@@ -48,6 +49,12 @@ export function pageResources(
         contentType: "inline",
         spaPreserve: true,
         script: contentIndexScript,
+      },
+      {
+        loadTime: "afterDOMReady",
+        contentType: "external",
+        spaPreserve: true,
+        src: joinSegments(baseDir, "static/oneko.js"),
       },
       ...staticResources.js,
     ],
