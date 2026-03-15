@@ -1,6 +1,6 @@
 Hi, I'm Julien, I'm currently working over at Inetum as a platform engineer, specialized in Openshift, HPC / MLOps.
 
-As of right now I'm building the Openshift on-premise platform for Total Energies.
+As of right now I'm building the Openshift on-premise platform for Total Energies and their AI (LLM+Pred.) hub.
 
 I fell in love with computers when I was around 11, my father put the old family computer in my room; looking at an old windows 2000 with no internet, I decided to start "making my own games" with VBS, and since then I've loved everything with a capacitor in it.
 

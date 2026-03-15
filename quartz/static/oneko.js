@@ -7,7 +7,17 @@
 
   if (isReducedMotion) return;
 
-  const nekoEl = document.createElement("div");
+  // Check if oneko has already been initialized and is still in DOM
+  let nekoEl = document.getElementById("oneko");
+  if (nekoEl && document.body.contains(nekoEl)) {
+    // Cat already exists in DOM, just ensure animation loop continues
+    if (!window.onekoInitialized) {
+      window.onekoAnimFrame();
+    }
+    return;
+  }
+
+  nekoEl = document.createElement("div");
 
   let nekoPosX = 32;
   let nekoPosY = 32;
@@ -104,7 +114,10 @@
     }
     nekoEl.style.backgroundImage = `url(${nekoFile})`;
 
-    document.body.appendChild(nekoEl);
+    // Only append if not already in DOM
+    if (!document.body.contains(nekoEl)) {
+      document.body.appendChild(nekoEl);
+    }
 
     document.addEventListener("mousemove", function (event) {
       mousePosX = event.clientX;
@@ -119,6 +132,8 @@
   function onAnimationFrame(timestamp) {
     // Stops execution if the neko element is removed from DOM
     if (!nekoEl.isConnected) {
+      // Not connected anymore, try to reinitialize on next nav
+      window.onekoInitialized = false;
       return;
     }
     if (!lastFrameTimestamp) {
@@ -280,4 +295,5 @@
   }
 
   init();
+  window.onekoInitialized = true;
 })();

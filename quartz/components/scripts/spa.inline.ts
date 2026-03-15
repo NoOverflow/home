@@ -101,8 +101,15 @@ async function _navigate(url: URL, isBack: boolean = false) {
   announcer.dataset.persist = ""
   html.body.appendChild(announcer)
 
+  const cat = document.getElementById("oneko");
+
   // morph body
   micromorph(document.body, html.body)
+
+  // transfer da cat
+  if (cat) {
+    document.body.appendChild(cat);
+  }
 
   // scroll into place and add history
   if (!isBack) {
