@@ -1,27 +1,13 @@
 FROM node:24-slim AS builder
-USER 1000
 WORKDIR /usr/src/app
-COPY package.json .
-COPY package-lock.json* .
-RUN npm ci
 
-WORKDIR /usr/src/app
-USER 1000
 COPY . .
+RUN npm ci
+RUN npx quartz build
 
-USER 0
-ENV npm_config_cache=/cache
-RUN mkdir /cache && \
-    chgrp -R 0 /usr/src/app /cache && \
-    chmod -R g=u /usr/src/app /cache && \
-    chmod -R 777 /cache
+FROM nginxinc/nginx-unprivileged:1.29-trixie-perl
 
-USER 1000
-ENV npm_config_cache=/cache
-RUN npx quartz --help > /dev/null 2>&1 || true
+COPY --from=builder /usr/src/app/public /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-USER 0
-RUN chmod -R 777 /cache
-
-USER 1000
-CMD ["npx", "quartz", "build", "--serve"]
+EXPOSE 8080
