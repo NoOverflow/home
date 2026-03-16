@@ -105,7 +105,7 @@
     nekoEl.style.imageRendering = "pixelated";
     nekoEl.style.left = `${nekoPosX - 16}px`;
     nekoEl.style.top = `${nekoPosY - 16}px`;
-    nekoEl.style.zIndex = Number.MAX_VALUE;
+    nekoEl.style.zIndex = 9999;
 
     let nekoFile = "/static/oneko.gif"
     const curScript = document.currentScript
@@ -212,31 +212,6 @@
     idleAnimationFrame += 1;
   }
 
-  function explodeHearts() {
-    const parent = nekoEl.parentElement;
-    const rect = nekoEl.getBoundingClientRect();
-    const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const centerX = rect.left + rect.width / 2 + scrollLeft;
-    const centerY = rect.top + rect.height / 2 + scrollTop;
-
-    for (let i = 0; i < 10; i++) {
-      const heart = document.createElement('div');
-      heart.className = 'heart';
-      heart.textContent = '❤';
-      const offsetX = (Math.random() - 0.5) * 50;
-      const offsetY = (Math.random() - 0.5) * 50;
-      heart.style.left = `${centerX + offsetX - 16}px`;
-      heart.style.top = `${centerY + offsetY - 16}px`;
-      heart.style.transform = `translate(-50%, -50%) rotate(${Math.random() * 360}deg)`;
-      parent.appendChild(heart);
-
-      setTimeout(() => {
-        parent.removeChild(heart);
-      }, 1000);
-    }
-  }
-
   const style = document.createElement('style');
   style.innerHTML = `
 		  @keyframes heartBurst {
@@ -253,7 +228,8 @@
 	  `;
 
   document.head.appendChild(style);
-  nekoEl.addEventListener('click', explodeHearts);
+
+  //nekoEl.addEventListener('click', explodeHearts);
 
   function frame() {
     frameCount += 1;
