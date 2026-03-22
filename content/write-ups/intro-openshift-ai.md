@@ -13,7 +13,7 @@ All manifests used for this blog post are available at [https://github.com/NoOve
 
 ## Introduction
 
-![Openshift AI Dashboard](https://nefast.me/content/images/2025/06/image-3.png)
+![Openshift AI Dashboard](assets/intro-openshift-ai/image-3.png)
 
 If you're not familiar with any of the fancy words in the title, I don't blame you, it's a big word-salad, let's see what we're getting into:
 
@@ -41,7 +41,7 @@ Openshift administrators weren't forgotten either, Openshift AI also comes packa
 
 Ray is an open-source project aiming to help with the parallelization and scaling of python. Since there's only so much compute available on a single thread of a single processor, Ray makes it easy to spread your code across multiple threads, processes or even entire machines, this is especially useful for AI / ML workloads for which Ray provides various tools to help with training, tuning and serving.
 
-![Ray Architecture](https://nefast.me/content/images/2025/06/image-2.png)
+![Ray Architecture](assets/intro-openshift-ai/image-2.png)
 
 Ray is made up of 5 main libraries based on a common library called "core":
 
@@ -57,7 +57,7 @@ On a more personal note, I fell in love with the almost " _magical_" promise of 
 
 _IBM_ CodeFlare is another open-sourced tool that's meant to help run Ray at-scale on Openshift by providing an operator to create tenant-aware Ray clusters, integrating neatly with the cloud-hybrid approach of running.
 
-![CodeFlare Architecture](https://nefast.me/content/images/2025/10/image-1.png)
+![CodeFlare Architecture](assets/intro-openshift-ai/image-1.png)
 
 For example, CodeFlare provides a tool called [InstaScale](https://github.com/project-codeflare/instascale?ref=nefast.me) that would allow you to create training instances on demand from an hyperscaler (read AWS, Azure...) and delete them once you no longer needs them by using the [CCPMSO](https://github.com/openshift/cluster-control-plane-machine-set-operator?ref=nefast.me). That's definitely something I'll write a post about when I can secure some funds.
 
@@ -79,7 +79,7 @@ We won't dig much more than that, pipelines, LLMs, visualizations, GPUs, batch s
 
 An intuitive, easy-to-use python interface for batch resource requesting, access, job submission, and observation. Simplifying the developer&#39;s life while enabling access to high-performance com…
 
-![CodeFlare SDK](https://nefast.me/content/images/thumbnail/codeflare-sdk)](https://github.com/redhat-na-ssa/codeflare-sdk/blob/main/demo-notebooks/additional-demos/ray_job_client.ipynb?ref=nefast.me)
+![CodeFlare SDK](assets/intro-openshift-ai/codeflare-sdk)](https://github.com/redhat-na-ssa/codeflare-sdk/blob/main/demo-notebooks/additional-demos/ray_job_client.ipynb?ref=nefast.me)
 
 ## Installing Openshift AI
 
@@ -89,7 +89,7 @@ Ideally you would do that through a GitOps solution like _ArgoCD_ but for the sa
 
 - Head to the OperatorHub and look for the " _Openshift AI_" operator.
 
-![OperatorHub](https://nefast.me/content/images/2025/06/image-4.png)
+![OperatorHub](assets/intro-openshift-ai/image-4.png)
 
 - Follow through with the install keeping everything default.
 - Once the operator is installed, get the route for the _RHODS_ dashboard and access it.
@@ -98,7 +98,7 @@ Ideally you would do that through a GitOps solution like _ArgoCD_ but for the sa
 oc get route -n redhat-ods-applications rhods-dashboard -o json | jq -r .spec.host
 ```
 
-![RHODS Dashboard](https://nefast.me/content/images/2025/06/image-5.png)
+![RHODS Dashboard](assets/intro-openshift-ai/image-5.png)
 
 - This is the main dashboard that will be used by your scientists, **almost all resources you see on there can be configured through regular Kubernetes objects.**
 
@@ -110,7 +110,7 @@ Now that our platform is up, we'll configure the storage classes that will be av
 
 - Head over to "Settings > Storage classes", this is the tab used to configure the self-service of the persistent volumes that will be used for persistence of the workbenches (the virtual development environments)
 
-![Storage Classes](https://nefast.me/content/images/2025/06/image-7.png)
+![Storage Classes](assets/intro-openshift-ai/image-7.png)
 
 - Now enable and set to default at least one of the storage classes.
 
@@ -174,9 +174,7 @@ nefast@sapphire:~$ oc get imagestream -n redhat-ods-applications s2i-minimal-not
 quay.io/modh/odh-minimal-notebook-container@sha256:addd6f8573858510cfa94d1972feb868eb9db04aa38b632616de88b0dcd3d989
 ```
 
-💡
-
-If you want to create your own image from scratch, make sure you read the following constraints: [https://docs.redhat.com/en/documentation/red\_hat\_openshift\_ai\_self-managed/2.20/html/managing\_openshift\_ai/creating-custom-workbench-images#basic\_guidelines\_for\_creating\_your\_own\_workbench\_image](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/2.20/html/managing_openshift_ai/creating-custom-workbench-images?ref=nefast.me#basic_guidelines_for_creating_your_own_workbench_image)
+> [!info] If you want to create your own image from scratch, make sure you read the following constraints: [https://docs.redhat.com/en/documentation/red\_hat\_openshift\_ai\_self-managed/2.20/html/managing\_openshift\_ai/creating-custom-workbench-images#basic\_guidelines\_for\_creating\_your\_own\_workbench\_image](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/2.20/html/managing_openshift_ai/creating-custom-workbench-images?ref=nefast.me#basic_guidelines_for_creating_your_own_workbench_image)
 
 With that base image obtained, we can build on top of it with our own dependencies list using a simple Dockerfile ( [source](https://github.com/NoOverflow/openshift-ai-blog-post/blob/master/Dockerfile?ref=nefast.me)):
 
@@ -191,11 +189,11 @@ RUN pip install -r compute.requirements.txt --default-timeout=1000 --no-cache-di
 
 I would **HEAVILY** recommend using [UV](https://docs.astral.sh/uv/pip/?ref=nefast.me) for package installation, so much so that I will make a dedicated post on how to use it as a replacement for the horrendously slow Python's PIP.
 
-![UV Recommendation](https://nefast.me/content/images/2025/10/image-2.png)
+![UV Recommendation](assets/intro-openshift-ai/image-2.png)
 
 Once your new image is built, we're going to configure it as an option in our Openshift AI instance, to do-so you can either use the UI or do it declaratively (workbench images are ImageStreams object with a special tag):
 
-![Image Configuration](https://nefast.me/content/images/2025/10/image-3.png)
+![Image Configuration](assets/intro-openshift-ai/image-3.png)
 
 ```YAML
 nefast@sapphire $ oc get imagestream -n redhat-ods-applications jupyter-logreg-demo -o yaml
@@ -316,7 +314,7 @@ spec:
 
 Alright, we're now ready to create a new workbench. We'll choose the image we created earlier and no accelerator since we haven't set up vGPUs (yet 😛).
 
-![Workbench Creation](https://nefast.me/content/images/2025/10/image-4.png)
+![Workbench Creation](assets/intro-openshift-ai/image-4.png)
 
 ### Run our first distributed compute
 
@@ -342,21 +340,21 @@ This playbook is fairly simple, it is made of 3 parts:
 
 - The creation of our distributed Ray cluster
 
-![Ray Cluster Creation](https://nefast.me/content/images/2025/11/image.png)
+![Ray Cluster Creation](assets/intro-openshift-ai/image.png)
 
 - Since each worker must have the packages needed by your workload script, we install them as part of our setup
 
-![Worker Setup](https://nefast.me/content/images/2025/11/image-2.png)
+![Worker Setup](assets/intro-openshift-ai/image-2.png)
 
 - Run the compute, in our case it's a [quantile regression example](https://scikit-learn.org/stable/auto_examples/ensemble/plot_gradient_boosting_quantile.html?ref=nefast.me) adapted from an SKLearn demonstration script to work with xgboost\_ray ( [source](https://github.com/NoOverflow/openshift-ai-blog-post/blob/master/demo.ipynb?ref=nefast.me))
 
-![Quantile Regression](https://nefast.me/content/images/2025/11/image-1.png)
+![Quantile Regression](assets/intro-openshift-ai/image-1.png)
 
 We just found one of the most inefficient ways to compute `x.sin(x)` with subpar accuracy !
 
 Let's see if we got meaningful metrics from this run on our dashboards. All of the data should've been collected automatically by Prometheus.
 
-![Prometheus Dashboard](https://nefast.me/content/images/2025/11/image-3.png)
+![Prometheus Dashboard](assets/intro-openshift-ai/image-3.png)
 
 ## **Conclusion**
 

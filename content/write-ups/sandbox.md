@@ -19,9 +19,7 @@ All of the files used in this post are available on my github.
 
 ## Why do we need to sandbox containers ?
 
-😶‍🌫️
-
-You can skip this part if you're already familiar with containers vs virtual machines
+> [!info] You can skip this part if you're already familiar with containers vs virtual machines
 
 If you're just starting your journey with containers, or if you've only just heard of them, you might think that containers are akin to virtual machines in that they allow to completely isolate workloads running inside them from the host, and from other containers. Unfortunately, the line is way more blurry than that.
 
@@ -33,7 +31,7 @@ A container is, if we reduce it to the minimum, nothing more than a Linux proces
 
 While this reduces the crossover surface between multiple workloads, this does not provide complete isolation from the host, and exploits can result in code being run on the host ( [container breakouts](https://www.container-security.site/attackers/container_breakout_vulnerabilities.html?ref=nefast.me)). These exploits are in-part due to the fact that all containers share the same instance of the Linux kernel, which is not the case for virtual machines.
 
-![A picture showing the difference between virtual machines and containers](https://nefast.me/content/images/2024/12/image.png)
+![A picture showing the difference between virtual machines and containers](assets/sandbox/image.png)
 
 ### So why do we use them and not run VMs for everything ?
 
@@ -54,7 +52,7 @@ Finally, after all this yapping, we come to the interesting part of the post. Wh
   Coming up with sensible restriction profiles for each of your container images can be quite time-consuming as, even a single file or syscall missing will result in your workload crashing.
 - **Security-oriented container runtimes**: these are specific runtime implementing the OCI standard focused on increased workload isolation. **And today we're trying one of them, gVisor's runsc.**
 
-![Runtime Stack](https://nefast.me/content/images/2024/12/image-1.png)
+![Runtime Stack](assets/sandbox/image-1.png)
 
 ## What is gVisor ?
 
@@ -73,7 +71,7 @@ Obviously, since containers must still be able to mount files or perform specifi
 
 A good analogy of `runsc` I thought of recently would be the movie "The Truman's show", while seemingly a weird one, the container is stuck in a sandbox, thinking it's in a real system and only given what is needed to survive (syscalls, files, network...) by an exterior power (the guest kernel).
 
-![Comparison of different runtime stacks](https://nefast.me/content/images/2024/12/runsc.drawio--3-.png)
+![Comparison of different runtime stacks](assets/sandbox/runsc.drawio--3-.png)
 
 ## Testing gVisor
 
@@ -81,9 +79,7 @@ A good analogy of `runsc` I thought of recently would be the movie "The Truman's
 
 For testing purposes, I pieced together a quick privileged `DaemonSet` that downloads and installs the `runsc` runtime. You will probably have to modify it slightly, especially the _"config.toml"_ part.
 
-🛑
-
-You might break your cluster if you don't check that the indentation line 48 fits your containerd config.toml indentation.
+> [!warning] You might break your cluster if you don't check that the indentation line 48 fits your containerd config.toml indentation.
 
 ```YAML
 apiVersion: apps/v1
@@ -175,9 +171,7 @@ spec:
     type: RollingUpdate
 ```
 
-💡
-
-I'd recommend not copy-pasting directly, use the version on GitHub instead
+> [!info] I'd recommend not copy-pasting directly, use the version on GitHub instead
 
 Once that runtime is installed, let Kubernetes know about it so it can use it.
 
@@ -212,7 +206,7 @@ spec:
 
 Once that pod starts, you can confirm that you're indeed running in a sandbox by reading the kernel logs in the pod.
 
-![Kernel Logs](https://nefast.me/content/images/2024/12/image-2.png)
+![Kernel Logs](assets/sandbox/image-2.png)
 
 Congratulations, you just ran your first sandboxed container, now how do we look inside, from outside ?
 
@@ -224,11 +218,9 @@ Falco "is a cloud native security tool that provides runtime security across hos
 
 Basically, it takes a lot of raw data (in our case, traces) and extracts intelligence from it.
 
-💡
+> [!info] Debugging workloads for sandbox compatibility is a different process that I may describe in another post.
 
-Debugging workloads for sandbox compatibility is a different process that I may describe in another post.
-
-![Runtime monitoring setup for gVisor + Falco](https://nefast.me/content/images/2024/12/image-4.png)
+![Runtime monitoring setup for gVisor + Falco](assets/sandbox/image-4.png)
 
 To install Falco, we'll use [the Helm chart](https://artifacthub.io/packages/helm/falcosecurity/falco?ref=nefast.me), modifying it to enable the gVisor driver (Falco supports other runtimes, but we're only interested in gVisor for now). Here are the values I've used with a quick description of what they do:
 
@@ -274,23 +266,23 @@ Make sure you use version 4.6.2 of the helm chart, as there was a bug causing me
 
 With that deployed, we can access the Falco SideKick UI (make sure you did change the host url in the values file 😉):
 
-![Falcosidekick user interface](https://nefast.me/content/images/2024/12/image-5.png)
+![Falcosidekick user interface](assets/sandbox/image-5.png)
 
 Falco Sidekick is in charge of collecting various metrics from Falco, and presenting them through a WebUI. This is an optional component and can be replaced by a Grafana dashboard as well.
 
-![Equivalent grafana dashboard](https://nefast.me/content/images/2024/12/image-6.png)
+![Equivalent grafana dashboard](assets/sandbox/image-6.png)
 
 Falco Sidekick is also used to interface with various other components, for example you could send notifications to a security team if a critical event happens in a sandboxed container !
 
-![Security Event Notification](https://nefast.me/content/images/2024/12/image-7.png)
+![Security Event Notification](assets/sandbox/image-7.png)
 
 Let's trigger a security event manually to see what happens. To do-so we'll open a shell in the container we created previously and try to open a sensitive file (/etc/shadow).
 
-![Trigger Security Event](https://nefast.me/content/images/2024/12/image-8.png)
+![Trigger Security Event](assets/sandbox/image-8.png)
 
 Did Falco catch that ?
 
-![Falco Detection](https://nefast.me/content/images/2024/12/image-9.png)
+![Falco Detection](assets/sandbox/image-9.png)
 
 It did ! We're now seen, our massive skill issue caused Falco Sidekick to trigger a PagerDuty alarm, and the security team is already cursing at you for disturbing them during their CS2 game.
 
@@ -336,19 +328,19 @@ Obviously, introducing an intermediate layer for sandboxing comes with a slight 
 
 Memory operations per second is almost equal between the two, this is because the only overhead added by `runsc` is when mapping the memory segment, not during memory access.
 
-![Memory Operations](https://nefast.me/content/images/2024/12/image-10.png)
+![Memory Operations](assets/sandbox/image-10.png)
 
 Memory usage is slightly increased due to the additional sandboxing components, however this overhead in size does not scale linearly with the sandboxed container memory usage.
 
-![Memory Usage](https://nefast.me/content/images/2024/12/image-11.png)
+![Memory Usage](assets/sandbox/image-11.png)
 
 CPU Events per second are equal, as runsc is not re-interpreting anything here.
 
-![CPU Events](https://nefast.me/content/images/2024/12/image-12.png)
+![CPU Events](assets/sandbox/image-12.png)
 
 Systemcall times however... are hum... impacted by runsc, as they are handled by a user-mode kernel and some of them will even require runsc to make another syscall to the host in order to serve the first one. However this depends on the platform, `systrap` (the default platform since mid-2023), will have a severe syscall overhead; on the other hand `runsc` on `kvm` platform has even slower latency than `runc`, but comes with the downside that it has to be run in a bare-metal environment.
 
-![Systemcall Times](https://nefast.me/content/images/2024/12/image-13.png)
+![Systemcall Times](assets/sandbox/image-13.png)
 
 The gVisor team made [a complete benchmark](https://gvisor.dev/docs/architecture_guide/performance/?ref=nefast.me) that gives really good insights on where `runsc` performs well, and where it doesn't, so I highly recommend you read it before going down the sandboxing route.
 
@@ -358,6 +350,6 @@ Hopefully you learned some things about container sandboxing and monitoring. Now
 
 gVisor's team recommendation, is to only sandbox what is truly needed, and to try and isolate risky services on specific nodes; as-well as offloading "core" components such as your ingress controller to cloud services if possible in order to get the best tradeoff between security and performance.
 
-![gVisor Production Setup](https://nefast.me/content/images/2024/12/Untitled-Diagram.drawio.png)
+![gVisor Production Setup](assets/sandbox/Untitled-Diagram.drawio.png)
 
 > If you notice an error in the post, feel free to hit me up on GitHub 😄

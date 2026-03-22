@@ -8,7 +8,7 @@ tags:
   - Troubleshooting
 ---
 
-![TLS interception and how it broke my Openshift telemetry client](http://nefast.me/content/images/size/w1200/2025/06/trojan_horse.png)
+![TLS interception and how it broke my Openshift telemetry client](assets/tls-interception/trojan_horse.png)
 
 ## Premises
 
@@ -28,7 +28,7 @@ When a user connects to a website, the browser checks the website's certificate 
 
 Alright, back to the original topic, this is all good and HTTPS is awesome, but that means that our proxy interception will now cause a major issue because of how it works:
 
-![TLS interception](https://nefast.me/content/images/2025/06/image-11.png)
+![TLS interception](assets/tls-interception/image-11.png)
 
 Now when the client receives its response from the handshake it made to the website, the public certificate it receives isn't signed by a standard certificate authority (such as [https://letsencrypt.org/](https://letsencrypt.org/?ref=nefast.me)) but by our proxy or firewall own CA, thus making every request fail due to a self-signed certificate.
 
@@ -84,15 +84,15 @@ Proxy-Owner operators.coreos.com/v1alpha1ClusterServiceVersion aap/aap-operator.
 
 On the day of the TLS interception, I spent an hour looking over each pod and metric to confirm that everything was okay.
 
-![D-Day](https://nefast.me/content/images/2025/06/image-15.png)
+![D-Day](assets/tls-interception/image-15.png)
 
 And while pretty much everything went smoothly, something had to break because, as we say in France: " _it would be too funny otherwise_".
 
-![Error](https://nefast.me/content/images/2025/06/image-16.png)
+![Error](assets/tls-interception/image-16.png)
 
 This is the component responsible for sending the cluster status and alarms to the Openshift hybrid console ( [https://console.redhat.com/](https://console.redhat.com/?ref=nefast.me)), my first reaction was just: " _oh, forgot about this one maybe_", but it was weird, as this was an Openshift managed pod and should be working fine.
 
-![Logs](https://nefast.me/content/images/2025/06/image-8.png)
+![Logs](assets/tls-interception/image-8.png)
 
 Looking at the logs confused me even more. Usually if you misconfigure the trust store on a pod, you get an error like " _self-signed certificate in the chain_" or " _cannot verify certificate_", but this was worse, just a single EndOfFile error.
 
@@ -102,7 +102,7 @@ Time to debug.
 
 Since the pod is managed by an operator, let's copy the deployment and re-create it with another name, this will allow us to modify the container entry-point arguments to enable verbose logging.
 
-![Debugging](https://nefast.me/content/images/2025/06/image-26.png)
+![Debugging](assets/tls-interception/image-26.png)
 
 Alright, this doesn't help us much either, fortunately, pretty much everything Red Hat uses is open source, so let's go look into the source code for the corresponding line and go from there.
 
@@ -110,7 +110,7 @@ Alright, this doesn't help us much either, fortunately, pretty much everything R
 
 Found it, this seems like the main loop method for the thread responsible for sending the metrics to Red Hat's server. Now we just have to walk the stack trace manually and figure out why we end up in this condition.
 
-![Stack Trace](https://nefast.me/content/images/2025/06/image-18.png)
+![Stack Trace](assets/tls-interception/image-18.png)
 
 Alright, we end up here. This is the function responsible of sending the data to the server, and we can learn a few things just from reading the code:
 
@@ -121,35 +121,39 @@ Alright, we end up here. This is the function responsible of sending the data to
 Let's take what we learned from this method, and convert all of it to a cURL request so that we can modify it easily to try and figure out why our proxy refuses it. Here's what I came up with:
 
 ```bash
-curl -X POST "https://infogw.api.openshift.com/" \n  --http2 \n  -H "Content-Type: application/vnd.google.protobuf; proto=io.prometheus.client.MetricFamily; encoding=delimited" \n  -H "Content-Encoding: snappy" \n  --data "hello" \n  --max-time 30
+curl -X POST "https://infogw.api.openshift.com/" --http2 \
+  -H "Content-Type: application/vnd.google.protobuf; proto=io.prometheus.client.MetricFamily; encoding=delimited" \
+  -H "Content-Encoding: snappy" \
+  --data "hello" \
+  --max-time 30
 ```
 
 Let's run it and pray that we get the same behaviour:
 
-![cURL](https://nefast.me/content/images/2025/06/image-19.png)
+![cURL](assets/tls-interception/image-19.png)
 
 Bingo, now we're free to play around and see when it breaks. First let's start with the obvious move and disable http2:
 
-![Disable HTTP2](https://nefast.me/content/images/2025/06/image-20.png)
+![Disable HTTP2](assets/tls-interception/image-20.png)
 
 Mh, still broken. Let's try disabling the compression:
 
-![Disable Compression](https://nefast.me/content/images/2025/06/image-21.png)
+![Disable Compression](assets/tls-interception/image-21.png)
 
 Nice, the request went through, it seems like the compression is causing issue at the proxy level, probably because "snappy" is not widely used in HTTP communications.
 
 Let's confirm that by writing our own version of the telemetry client, completely removing the "snappy" compression. To do-so, we'll remove the [Content-Encoding](https://developer.mozilla.org/fr/docs/Web/HTTP/Reference/Headers/Content-Encoding?ref=nefast.me) header and patch out the compression by modifying the write buffers:
 
-![Disable Snappy](https://nefast.me/content/images/2025/06/image-22.png)
+![Disable Snappy](assets/tls-interception/image-22.png)
 [Disable snappy compression for metrics · openshift/telemeter@80d7f9a](https://github.com/openshift/telemeter/commit/80d7f9ae4bdd67b0d7425cf11e0ddd2db7e5b0fe?ref=nefast.me)
 
 Let's compile it back into a container image using the repository provided Dockerfile, push it to DockerHub and modify the image in our deployment:
 
-![Docker Image](https://nefast.me/content/images/2025/06/image-10.png)
+![Docker Image](assets/tls-interception/image-10.png)
 
 Bingo, we won, there are no more errors, and we can see our cluster back and alive in our hybrid console !
 
-![Success](https://nefast.me/content/images/2025/06/image-24.png)
+![Success](assets/tls-interception/image-24.png)
 
 Unfortunately, we can't keep our telemetry client like that for two reasons:
 
