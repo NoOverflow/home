@@ -1,5 +1,5 @@
 ---
-title: Modifying a MachineSet's template spec doesn't cause a rollout.
+title: Modifying a MachineSet's template spec doesn't cause a rollout
 draft: false
 tags:
   - Solutions

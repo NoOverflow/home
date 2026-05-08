@@ -12,6 +12,4 @@ Posts are separated in various categories:
 - **Post-its**: small rants, notes to myself.
 - **Vault**: contains *things*: posts I want to keep somewhere, interesting stuff to buy or to make, project ideas..
 
-![kat](https://i.pinimg.com/originals/80/7b/5c/807b5c4b02e765bb4930b7c66662ef4b.gif)
-
 *This website is currently being migrated from the old Ghost blog instance, so it's kind of empty right now*
