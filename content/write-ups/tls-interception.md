@@ -30,7 +30,7 @@ Alright, back to the original topic, this is all good and HTTPS is awesome, but 
 
 ![TLS interception](assets/tls-interception/image-11.png)
 
-Now when the client receives its response from the handshake it made to the website, the public certificate it receives isn't signed by a standard certificate authority (such as [https://letsencrypt.org/](https://letsencrypt.org/?ref=nefast.me)) but by our proxy or firewall own CA, thus making every request fail due to a self-signed certificate.
+Now when the client receives its response from the handshake it made to the website, the public certificate it receives isn't signed by a standard certificate authority (such as [https://letsencrypt.org/](https://letsencrypt.org/)) but by our proxy or firewall own CA, thus making every request fail due to a self-signed certificate.
 
 To fix this and allow the requests to go through, we have to add this new custom CA to the trust store of every component of our infrastructure, in our case, we must make sure that each node and pod running on our clusters trust it.
 
@@ -45,11 +45,11 @@ Unfortunately, adding a new certificate authority to our pods isn't as straightf
 
 Thankfully, Openshift helps us with this process for some operators, since pretty much all Red Hat operators will automatically inject your custom CA, as long as you put them in the CA trust bundle by following this documentation:
 
-[Chapter 3. Configuring certificates | Security and compliance | OpenShift Container Platform | 4.18 | Red Hat Documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/security_and_compliance/configuring-certificates?ref=nefast.me#updating-ca-bundle)
+[Chapter 3. Configuring certificates | Security and compliance | OpenShift Container Platform | 4.18 | Red Hat Documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/security_and_compliance/configuring-certificates#updating-ca-bundle)
 
 However, you pretty much have to deal with every other internet-egressing pod manually. To help with the process, I've developed a quick script that gets every pod using our proxy, gets the operator managing it through the `ownerReferences` field and a bit of recursion, then check if the CA configuration is OK:
 
-[Script to check what pods are using a proxy and if its certificate store is configured correctly. - proxy_finder.py](https://gist.github.com/NoOverflow/64b76f4f237efeffe7bddb7759a64f83?ref=nefast.me)
+[Script to check what pods are using a proxy and if its certificate store is configured correctly. - proxy_finder.py](https://gist.github.com/NoOverflow/64b76f4f237efeffe7bddb7759a64f83)
 
 This gave me a complete list, helping me to go ahead and configure each operator to mount my new CA:
 
@@ -90,7 +90,7 @@ And while pretty much everything went smoothly, something had to break because, 
 
 ![Error](assets/tls-interception/image-16.png)
 
-This is the component responsible for sending the cluster status and alarms to the Openshift hybrid console ( [https://console.redhat.com/](https://console.redhat.com/?ref=nefast.me)), my first reaction was just: " _oh, forgot about this one maybe_", but it was weird, as this was an Openshift managed pod and should be working fine.
+This is the component responsible for sending the cluster status and alarms to the Openshift hybrid console ( [https://console.redhat.com/](https://console.redhat.com/)), my first reaction was just: " _oh, forgot about this one maybe_", but it was weird, as this was an Openshift managed pod and should be working fine.
 
 ![Logs](assets/tls-interception/image-8.png)
 
@@ -106,7 +106,7 @@ Since the pod is managed by an operator, let's copy the deployment and re-create
 
 Alright, this doesn't help us much either, fortunately, pretty much everything Red Hat uses is open source, so let's go look into the source code for the corresponding line and go from there.
 
-[telemeter/pkg at main · openshift/telemeter](https://github.com/openshift/telemeter/tree/main/pkg?ref=nefast.me)
+[telemeter/pkg at main · openshift/telemeter](https://github.com/openshift/telemeter/tree/main/pkg)
 
 Found it, this seems like the main loop method for the thread responsible for sending the metrics to Red Hat's server. Now we just have to walk the stack trace manually and figure out why we end up in this condition.
 
@@ -116,7 +116,7 @@ Alright, we end up here. This is the function responsible of sending the data to
 
 - It sends the metrics using Protobuf, a serialization format and library.
 - It uses HTTP2 to send that request.
-- It uses " [_snappy_](https://github.com/google/snappy?ref=nefast.me)" to compress the data, this makes sense, as sending the metrics for each Openshift cluster without compression would put an unholy amount of stress on RedHat's backend
+- It uses " [_snappy_](https://github.com/google/snappy)" to compress the data, this makes sense, as sending the metrics for each Openshift cluster without compression would put an unholy amount of stress on RedHat's backend
 
 Let's take what we learned from this method, and convert all of it to a cURL request so that we can modify it easily to try and figure out why our proxy refuses it. Here's what I came up with:
 
@@ -142,10 +142,10 @@ Mh, still broken. Let's try disabling the compression:
 
 Nice, the request went through, it seems like the compression is causing issue at the proxy level, probably because "snappy" is not widely used in HTTP communications.
 
-Let's confirm that by writing our own version of the telemetry client, completely removing the "snappy" compression. To do-so, we'll remove the [Content-Encoding](https://developer.mozilla.org/fr/docs/Web/HTTP/Reference/Headers/Content-Encoding?ref=nefast.me) header and patch out the compression by modifying the write buffers:
+Let's confirm that by writing our own version of the telemetry client, completely removing the "snappy" compression. To do-so, we'll remove the [Content-Encoding](https://developer.mozilla.org/fr/docs/Web/HTTP/Reference/Headers/Content-Encoding) header and patch out the compression by modifying the write buffers:
 
 ![Disable Snappy](assets/tls-interception/image-22.png)
-[Disable snappy compression for metrics · openshift/telemeter@80d7f9a](https://github.com/openshift/telemeter/commit/80d7f9ae4bdd67b0d7425cf11e0ddd2db7e5b0fe?ref=nefast.me)
+[Disable snappy compression for metrics · openshift/telemeter@80d7f9a](https://github.com/openshift/telemeter/commit/80d7f9ae4bdd67b0d7425cf11e0ddd2db7e5b0fe)
 
 Let's compile it back into a container image using the repository provided Dockerfile, push it to DockerHub and modify the image in our deployment:
 
@@ -172,7 +172,7 @@ That's it, that's the rule. First of all, **a missing compression algorithm SHOU
 
 
 
-  Sure, you might argue that "rfc9110 defines a list of allowed Content-Encoding header values at [https://www.iana.org/assignments/http-parameters/http-parameters.xhtml](https://www.iana.org/assignments/http-parameters/http-parameters.xhtml?ref=nefast.me)", and you would be correct but the horrible truth is that no one really cares about that.
+  Sure, you might argue that "rfc9110 defines a list of allowed Content-Encoding header values at [https://www.iana.org/assignments/http-parameters/http-parameters.xhtml](https://www.iana.org/assignments/http-parameters/http-parameters.xhtml)", and you would be correct but the horrible truth is that no one really cares about that.
 - Since the analysis by the proxy is usually done after the request, there's no point in dropping the request, just forward it anyway and send it as-is to the security team or face the hundreds of tickets you will get from applicative teams.
 - "but but, muh threat actors": I'll tell you right now, anyone can just lie about the Content-Encoding header value, I could also just put valid gzipd data that is actually C&C commands encrypted with my own protocol and the proxy would be happy to forward it.
 

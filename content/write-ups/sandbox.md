@@ -11,11 +11,11 @@ tags:
 
 Most of what will be discussed during this post, can be found in more details on gVisor's website, I'll merely be trying to sum some of it up and vulgarize some concepts but I highly recommend you to go read it, it's amazingly made for a documentation.
 
-[What is gVisor? - gVisor](https://gvisor.dev/docs/?ref=nefast.me)
+[What is gVisor? - gVisor](https://gvisor.dev/docs)
 
 All of the files used in this post are available on my github.
 
-[GitHub - NoOverflow/gvisor-falco-blog-post: Resources used for](https://github.com/NoOverflow/gvisor-falco-blog-post?ref=nefast.me)
+[GitHub - NoOverflow/gvisor-falco-blog-post: Resources used for](https://github.com/NoOverflow/gvisor-falco-blog-post)
 
 ## Why do we need to sandbox containers ?
 
@@ -27,9 +27,9 @@ If you're just starting your journey with containers, or if you've only just hea
 
 This honestly could be the subject of a whole other post, and might be one day, but we'll keep it simple for today.
 
-A container is, if we reduce it to the minimum, nothing more than a Linux process isolated in some ways using the wonderful namespacing features provided by the Linux kernel ( [cgroups](https://docs.kernel.org/admin-guide/cgroup-v2.html?ref=nefast.me), [net\_namespace](https://man7.org/linux/man-pages/man7/network_namespaces.7.html?ref=nefast.me) ...) (we'll skip the overlay-ing parts for today).
+A container is, if we reduce it to the minimum, nothing more than a Linux process isolated in some ways using the wonderful namespacing features provided by the Linux kernel ( [cgroups](https://docs.kernel.org/admin-guide/cgroup-v2.html), [net\_namespace](https://man7.org/linux/man-pages/man7/network_namespaces.7.html) ...) (we'll skip the overlay-ing parts for today).
 
-While this reduces the crossover surface between multiple workloads, this does not provide complete isolation from the host, and exploits can result in code being run on the host ( [container breakouts](https://www.container-security.site/attackers/container_breakout_vulnerabilities.html?ref=nefast.me)). These exploits are in-part due to the fact that all containers share the same instance of the Linux kernel, which is not the case for virtual machines.
+While this reduces the crossover surface between multiple workloads, this does not provide complete isolation from the host, and exploits can result in code being run on the host ( [container breakouts](https://www.container-security.site/attackers/container_breakout_vulnerabilities.html)). These exploits are in-part due to the fact that all containers share the same instance of the Linux kernel, which is not the case for virtual machines.
 
 ![A picture showing the difference between virtual machines and containers](assets/sandbox/image.png)
 
@@ -63,9 +63,9 @@ gVisor is a container security platform, its main "component" is **_runsc_**, an
 Let's begin by talking about how **runsc** doesn't work, or rather, what it isn't:
 
 - `runsc` is not a syscall filter, it doesn't have a list of seemingly innocent calls that it would allow, or not, and is not just passing them through.
-- `runsc` does not use lightweight virtualization to provide isolation like some other runtime do, such as [Kata](https://github.com/kata-containers/kata-containers?ref=nefast.me).
+- `runsc` does not use lightweight virtualization to provide isolation like some other runtime do, such as [Kata](https://github.com/kata-containers/kata-containers).
 
-Instead, `runsc` provides something that could be compared to a "guest" kernel (similar to [User Mode Linux](https://fr.wikipedia.org/wiki/User_Mode_Linux?ref=nefast.me)), this guest kernel has the job of handling the system calls of the container instead of just forwarding them to the host.
+Instead, `runsc` provides something that could be compared to a "guest" kernel (similar to [User Mode Linux](https://fr.wikipedia.org/wiki/User_Mode_Linux)), this guest kernel has the job of handling the system calls of the container instead of just forwarding them to the host.
 
 Obviously, since containers must still be able to mount files or perform specific actions, `runsc` has to make system calls to the host in order to perform these actions, but these are kept to a minimum and only if allowed.
 
@@ -222,7 +222,7 @@ Basically, it takes a lot of raw data (in our case, traces) and extracts intelli
 
 ![Runtime monitoring setup for gVisor + Falco](assets/sandbox/image-4.png)
 
-To install Falco, we'll use [the Helm chart](https://artifacthub.io/packages/helm/falcosecurity/falco?ref=nefast.me), modifying it to enable the gVisor driver (Falco supports other runtimes, but we're only interested in gVisor for now). Here are the values I've used with a quick description of what they do:
+To install Falco, we'll use [the Helm chart](https://artifacthub.io/packages/helm/falcosecurity/falco), modifying it to enable the gVisor driver (Falco supports other runtimes, but we're only interested in gVisor for now). Here are the values I've used with a quick description of what they do:
 
 ```YAML
 # This is a pod that expose a web interface for falco
@@ -262,7 +262,7 @@ driver:
 
 😖
 
-Make sure you use version 4.6.2 of the helm chart, as there was a bug causing metrics not to be uploaded to SideKick, I've opened a PR to fix it [https://github.com/falcosecurity/charts/pull/794](https://github.com/falcosecurity/charts/pull/794?ref=nefast.me) but it is only available for >4.6.1
+Make sure you use version 4.6.2 of the helm chart, as there was a bug causing metrics not to be uploaded to SideKick, I've opened a PR to fix it [https://github.com/falcosecurity/charts/pull/794](https://github.com/falcosecurity/charts/pull/794) but it is only available for >4.6.1
 
 With that deployed, we can access the Falco SideKick UI (make sure you did change the host url in the values file 😉):
 
@@ -286,7 +286,7 @@ Did Falco catch that ?
 
 It did ! We're now seen, our massive skill issue caused Falco Sidekick to trigger a PagerDuty alarm, and the security team is already cursing at you for disturbing them during their CS2 game.
 
-Obviously, Falco comes packaged with various rules, but you're free to extend this catalog with your own and assign them different criticality levels. ( [https://falco.org/docs/rules/basic-elements/](https://falco.org/docs/rules/basic-elements/?ref=nefast.me)).
+Obviously, Falco comes packaged with various rules, but you're free to extend this catalog with your own and assign them different criticality levels. ( [https://falco.org/docs/rules/basic-elements/](https://falco.org/docs/rules/basic-elements/)).
 
 Rules are based on an event (such as a syscall), and will be evaluated against different conditions, for example the rule...:
 
@@ -306,11 +306,11 @@ Rules are based on an event (such as a syscall), and will be evaluated against d
   priority: WARNING
 ```
 
-... looks for `execve` syscalls, and check if the process starting is a shell (bash/ksh), which could indicate a container takeover. The `evt.dir` variable is a bit confusing, it is not a directory, but the direction of the syscall, this is explained in more details in [Falco's documentation](https://falco.org/docs/rules/conditions/?ref=nefast.me#syscall-event-types-direction-and-args).
+... looks for `execve` syscalls, and check if the process starting is a shell (bash/ksh), which could indicate a container takeover. The `evt.dir` variable is a bit confusing, it is not a directory, but the direction of the syscall, this is explained in more details in [Falco's documentation](https://falco.org/docs/rules/conditions/#syscall-event-types-direction-and-args).
 
 💡
 
-The linux kernel as of 4.16, has over 300 system calls, however Falco doesn't support all of them (so does runsc), you can check what syscalls are supported [here](https://falco.org/docs/reference/rules/supported-events/?ref=nefast.me) for Falco, and [here](https://gvisor.dev/docs/user_guide/compatibility/linux/amd64/?ref=nefast.me) for runsc on amd64.
+The linux kernel as of 4.16, has over 300 system calls, however Falco doesn't support all of them (so does runsc), you can check what syscalls are supported [here](https://falco.org/docs/reference/rules/supported-events/) for Falco, and [here](https://gvisor.dev/docs/user_guide/compatibility/linux/amd64/) for runsc on amd64.
 
 ## Caveats
 
@@ -342,7 +342,7 @@ Systemcall times however... are hum... impacted by runsc, as they are handled by
 
 ![Systemcall Times](assets/sandbox/image-13.png)
 
-The gVisor team made [a complete benchmark](https://gvisor.dev/docs/architecture_guide/performance/?ref=nefast.me) that gives really good insights on where `runsc` performs well, and where it doesn't, so I highly recommend you read it before going down the sandboxing route.
+The gVisor team made [a complete benchmark](https://gvisor.dev/docs/architecture_guide/performance/) that gives really good insights on where `runsc` performs well, and where it doesn't, so I highly recommend you read it before going down the sandboxing route.
 
 ## Conclusion
 

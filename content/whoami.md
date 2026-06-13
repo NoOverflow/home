@@ -1,4 +1,4 @@
-Hi, I'm Julien, I'm currently working over at Inetum as a platform engineer, specialized in Openshift, HPC / MLOps.
+Hi, I'm Julien, I'm currently working over at Inetum as a platform engineer, specialized in Openshift / MLOps.
 
 As of right now I'm building the Openshift on-premise platform for Total Energies and their AI (LLM+Pred.) hub.
 

@@ -9,11 +9,9 @@ tags:
 
 _I've been recently tasked to build a PoC to showcase how we could onboard a team of data scientists on Openshift, and how we could improve their work process; I've decided that I might as well dig a bit more and document it online._
 
-All manifests used for this blog post are available at [https://github.com/NoOverflow/openshift-ai-blog-post](https://github.com/NoOverflow/openshift-ai-blog-post?ref=nefast.me), I'd recommend cloning it if you want to follow along. However if you do decide to, make sure you have an active, valid, Openshift subscription.
+All manifests used for this blog post are available at [https://github.com/NoOverflow/openshift-ai-blog-post](https://github.com/NoOverflow/openshift-ai-blog-post), I'd recommend cloning it if you want to follow along. However if you do decide to, make sure you have an active, valid, Openshift subscription.
 
 ## Introduction
-
-![Openshift AI Dashboard](assets/intro-openshift-ai/image-3.png)
 
 If you're not familiar with any of the fancy words in the title, I don't blame you, it's a big word-salad, let's see what we're getting into:
 
@@ -21,21 +19,21 @@ If you're not familiar with any of the fancy words in the title, I don't blame y
 
 Openshift AI is the Red Hat packaged version of Open Data Hub, an AI "platform". It's available as both a SaaS, and an on-premise solution.
 
-When talking to someone over at Red Hat about it, he described it as a " _different portal / view for Openshift made for data scientists and AI/ML devs_.". When you think about it like that, it all makes sense; Openshift AI is a platform made to address Openshift resources in a way that can be understood by a data scientist (try talking about " _SecurityContextConstraints"_ to one of them).
+When talking to someone over at Red Hat about it, he described it as a "_different portal / view for Openshift made for data scientists and AI/ML devs_.". When you think about it like that, it all makes sense; Openshift AI is a platform made to address Openshift resources in a way that can be understood by a data scientist (try talking about " _SecurityContextConstraints"_ to one of them).
 
 For example, through the Openshift AI dashboard:
 
-- A namespace isn't a namespace, it's a " _datascience project_"
-- There aren't " _pods_", only workbenches
-- To request a new workbench, you don't have to torture those poor data scientists with boring concept like " _StatefulSet_" or " _PersistentVolumeClaims_", a simple pre-configured form will do.
+- A namespace isn't a namespace, it's a "_datascience project_"
+- There aren't "_pods_", only workbenches
+- To request a new workbench, you don't have to torture those poor data scientists with boring concept like "_StatefulSet_" or "_PersistentVolumeClaims_", a simple pre-configured form will do.
 
 ... you get the point.
 
 Openshift administrators weren't forgotten either, Openshift AI also comes packaged with various operators for popular DS/AI/ML tools from conception of the models, training, fine-tuning and serving:
 
-- Distributed workloads through IBM [CodeFlare](https://codeflare.dev/?ref=nefast.me) operator (we'll go into more details after since it's one of our main talking points for today)
-- Serving models with [kServe](https://github.com/kserve/kserve?ref=nefast.me) and [Red Hat Openshift Serverless](https://www.redhat.com/en/technologies/cloud-computing/openshift/serverless?ref=nefast.me)
-- Job scheduling with [Kueue](https://kueue.sigs.k8s.io/?ref=nefast.me)
+- Distributed workloads through IBM [CodeFlare](https://codeflare.dev) operator (we'll go into more details after since it's one of our main talking points for today)
+- Serving models with [kServe](https://github.com/kserve/kserve) and [Red Hat Openshift Serverless](https://www.redhat.com/en/technologies/cloud-computing/openshift/serverless)
+- Job scheduling with [Kueue](https://kueue.sigs.k8s.io)
 
 ### Ray - CodeFlare
 
@@ -45,27 +43,27 @@ Ray is an open-source project aiming to help with the parallelization and scalin
 
 Ray is made up of 5 main libraries based on a common library called "core":
 
-- [Data](https://docs.ray.io/en/latest/data/data.html?ref=nefast.me): Scalable, framework-agnostic data loading and transformation across training, tuning, and prediction.
-- [Train](https://docs.ray.io/en/latest/train/train.html?ref=nefast.me): Distributed multi-node and multi-core model training with fault tolerance that integrates with popular training libraries.
-- [Tune](https://docs.ray.io/en/latest/tune/index.html?ref=nefast.me): Scalable hyperparameter tuning to optimize model performance.
-- [Serve](https://docs.ray.io/en/latest/serve/index.html?ref=nefast.me): Scalable and programmable serving to deploy models for online inference, with optional microbatching to improve performance.
-- [RLlib](https://docs.ray.io/en/latest/rllib/index.html?ref=nefast.me): Scalable distributed reinforcement learning workloads.
+- [Data](https://docs.ray.io/en/latest/data/data.html): Scalable, framework-agnostic data loading and transformation across training, tuning, and prediction.
+- [Train](https://docs.ray.io/en/latest/train/train.html): Distributed multi-node and multi-core model training with fault tolerance that integrates with popular training libraries.
+- [Tune](https://docs.ray.io/en/latest/tune/index.html): Scalable hyperparameter tuning to optimize model performance.
+- [Serve](https://docs.ray.io/en/latest/serve/index.html): Scalable and programmable serving to deploy models for online inference, with optional microbatching to improve performance.
+- [RLlib](https://docs.ray.io/en/latest/rllib/index.html): Scalable distributed reinforcement learning workloads.
 
-Today we'll just be using the **Tune** library, through another python library made by the Ray team called [xgboost\_ray](https://github.com/ray-project/xgboost_ray?ref=nefast.me) which will allow us to use **Ray** as a backend for our xgboost compute without having to modify the code too much.
+Today we'll just be using the **Tune** library, through another python library made by the Ray team called [xgboost\_ray](https://github.com/ray-project/xgboost_ray) which will allow us to use **Ray** as a backend for our xgboost compute without having to modify the code too much.
 
-On a more personal note, I fell in love with the almost " _magical_" promise of Ray, and also its complexity. The last time I've felt this overwhelmed by new concepts was when I was scrolling around [the OSDev wiki](https://wiki.osdev.org/Expanded_Main_Page?ref=nefast.me), and I just adore this feeling, there's so much to learn and so much **I want to** learn.
+On a more personal note, I fell in love with the almost "_magical_" promise of Ray, and also its complexity. The last time I've felt this overwhelmed by new concepts was when I was scrolling around [the OSDev wiki](https://wiki.osdev.org/Expanded_Main_Page), and I just adore this feeling, there's so much to learn and so much **I want to** learn.
 
 _IBM_ CodeFlare is another open-sourced tool that's meant to help run Ray at-scale on Openshift by providing an operator to create tenant-aware Ray clusters, integrating neatly with the cloud-hybrid approach of running.
 
 ![CodeFlare Architecture](assets/intro-openshift-ai/image-1.png)
 
-For example, CodeFlare provides a tool called [InstaScale](https://github.com/project-codeflare/instascale?ref=nefast.me) that would allow you to create training instances on demand from an hyperscaler (read AWS, Azure...) and delete them once you no longer needs them by using the [CCPMSO](https://github.com/openshift/cluster-control-plane-machine-set-operator?ref=nefast.me). That's definitely something I'll write a post about when I can secure some funds.
+For example, CodeFlare provides a tool called [InstaScale](https://github.com/project-codeflare/instascale) that would allow you to create training instances on demand from an hyperscaler (read AWS, Azure...) and delete them once you no longer needs them by using the [CCPMSO](https://github.com/openshift/cluster-control-plane-machine-set-operator). That's definitely something I'll write a post about when I can secure some funds.
 
 ## On today's program
 
 Now, obviously Openshift AI gives you a platform, but it's up to you to build it and make it actually usable for your data scientists. For today the goal will be simple:
 
-- Install Openshift AI ( _duh_)
+- Install Openshift AI (_duh_)
 - Make up a demonstration project around XGBoost, so that it can be easily parallelized across multiple nodes.
 - Create a work environment based around Jupyter IDE, with a Python virtual environment containing all libraries needed to run the project.
 - Setup a Ray cluster to distribute xgboost's matrix compute to multiple nodes at once, instead of relying only on the compute available to the pod running the aforementioned Jupyter IDE.
@@ -73,13 +71,9 @@ Now, obviously Openshift AI gives you a platform, but it's up to you to build it
 - Configure a Grafana instance to monitor our tuning.
 - Run our first compute !
 
-We won't dig much more than that, pipelines, LLMs, visualizations, GPUs, batch scheduling etc.. will be the subject of other posts coming ( _hopefully_) soon. This post is really just meant to be an introduction that builds the base for the upcoming ones.
+We won't dig much more than that, pipelines, LLMs, visualizations, GPUs, batch scheduling etc.. will be the subject of other posts coming (_hopefully_) soon. This post is really just meant to be an introduction that builds the base for the upcoming ones.
 
-[codeflare-sdk/demo-notebooks/additional-demos/ray\_job\_client.ipynb at main · redhat-na-ssa/codeflare-sdk
-
-An intuitive, easy-to-use python interface for batch resource requesting, access, job submission, and observation. Simplifying the developer&#39;s life while enabling access to high-performance com…
-
-![CodeFlare SDK](assets/intro-openshift-ai/codeflare-sdk)](https://github.com/redhat-na-ssa/codeflare-sdk/blob/main/demo-notebooks/additional-demos/ray_job_client.ipynb?ref=nefast.me)
+![CodeFlare SDK](assets/intro-openshift-ai/codeflare-sdk)](https://github.com/redhat-na-ssa/codeflare-sdk/blob/main/demo-notebooks/additional-demos/ray_job_client.ipynb)
 
 ## Installing Openshift AI
 
@@ -87,7 +81,7 @@ Let's start with the easy (but expensive) step, installing the operator.
 
 Ideally you would do that through a GitOps solution like _ArgoCD_ but for the sake of simplicity for the demo, let's do it through the console interface.
 
-- Head to the OperatorHub and look for the " _Openshift AI_" operator.
+- Head to the OperatorHub and look for the "_Openshift AI_" operator.
 
 ![OperatorHub](assets/intro-openshift-ai/image-4.png)
 
@@ -102,9 +96,7 @@ oc get route -n redhat-ods-applications rhods-dashboard -o json | jq -r .spec.ho
 
 - This is the main dashboard that will be used by your scientists, **almost all resources you see on there can be configured through regular Kubernetes objects.**
 
-⚠️
-
-By default, kubeadmin is not considered an Openshift AI admin, you will have to configure a custom provider and add your user as an admin, see: [https://docs.redhat.com/en/documentation/red\_hat\_openshift\_ai\_self-managed/2.20/html/managing\_openshift\_ai/managing-users-and-groups](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/2.20/html/managing_openshift_ai/managing-users-and-groups?ref=nefast.me)
+> [!warn] By default, kubeadmin is not considered an Openshift AI admin, you will have to configure a custom provider and add your user as an admin, see: https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/2.20/html/managing_openshift_ai/managing-users-and-groups
 
 Now that our platform is up, we'll configure the storage classes that will be available in self-service to our teams:
 
@@ -113,8 +105,6 @@ Now that our platform is up, we'll configure the storage classes that will be av
 ![Storage Classes](assets/intro-openshift-ai/image-7.png)
 
 - Now enable and set to default at least one of the storage classes.
-
-💡
 
 Openshift AI isn't really opiniated on the type of storage available but keep in mind that, while this may be used only for the project source storage, it may also be used to install virtual environments and packages. I'd avoid NFS volumes for example.
 
@@ -174,9 +164,9 @@ nefast@sapphire:~$ oc get imagestream -n redhat-ods-applications s2i-minimal-not
 quay.io/modh/odh-minimal-notebook-container@sha256:addd6f8573858510cfa94d1972feb868eb9db04aa38b632616de88b0dcd3d989
 ```
 
-> [!info] If you want to create your own image from scratch, make sure you read the following constraints: [https://docs.redhat.com/en/documentation/red\_hat\_openshift\_ai\_self-managed/2.20/html/managing\_openshift\_ai/creating-custom-workbench-images#basic\_guidelines\_for\_creating\_your\_own\_workbench\_image](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/2.20/html/managing_openshift_ai/creating-custom-workbench-images?ref=nefast.me#basic_guidelines_for_creating_your_own_workbench_image)
+> [!info] If you want to create your own image from scratch, make sure you read the following constraints: [https://docs.redhat.com/en/documentation/red\_hat\_openshift\_ai\_self-managed/2.20/html/managing\_openshift\_ai/creating-custom-workbench-images#basic\_guidelines\_for\_creating\_your\_own\_workbench\_image](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/2.20/html/managing_openshift_ai/creating-custom-workbench-images#basic_guidelines_for_creating_your_own_workbench_image)
 
-With that base image obtained, we can build on top of it with our own dependencies list using a simple Dockerfile ( [source](https://github.com/NoOverflow/openshift-ai-blog-post/blob/master/Dockerfile?ref=nefast.me)):
+With that base image obtained, we can build on top of it with our own dependencies list using a simple Dockerfile ( [source](https://github.com/NoOverflow/openshift-ai-blog-post/blob/master/Dockerfile)):
 
 ```Dockerfile
 FROM quay.io/modh/odh-minimal-notebook-container@sha256:addd6f8573858510cfa94d1972feb868eb9db04aa38b632616de88b0dcd3d989
@@ -187,7 +177,7 @@ RUN pip install -r requirements.txt --default-timeout=1000 --no-cache-dir
 RUN pip install -r compute.requirements.txt --default-timeout=1000 --no-cache-dir
 ```
 
-I would **HEAVILY** recommend using [UV](https://docs.astral.sh/uv/pip/?ref=nefast.me) for package installation, so much so that I will make a dedicated post on how to use it as a replacement for the horrendously slow Python's PIP.
+I would **HEAVILY** recommend using [UV](https://docs.astral.sh/uv/pip/) for package installation, so much so that I will make a dedicated post on how to use it as a replacement for the horrendously slow Python's PIP.
 
 ![UV Recommendation](assets/intro-openshift-ai/image-2.png)
 
@@ -346,7 +336,7 @@ This playbook is fairly simple, it is made of 3 parts:
 
 ![Worker Setup](assets/intro-openshift-ai/image-2.png)
 
-- Run the compute, in our case it's a [quantile regression example](https://scikit-learn.org/stable/auto_examples/ensemble/plot_gradient_boosting_quantile.html?ref=nefast.me) adapted from an SKLearn demonstration script to work with xgboost\_ray ( [source](https://github.com/NoOverflow/openshift-ai-blog-post/blob/master/demo.ipynb?ref=nefast.me))
+- Run the compute, in our case it's a [quantile regression example](https://scikit-learn.org/stable/auto_examples/ensemble/plot_gradient_boosting_quantile.html) adapted from an SKLearn demonstration script to work with xgboost\_ray ( [source](https://github.com/NoOverflow/openshift-ai-blog-post/blob/master/demo.ipynb))
 
 ![Quantile Regression](assets/intro-openshift-ai/image-1.png)
 
