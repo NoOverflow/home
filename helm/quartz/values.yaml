@@ -2,7 +2,7 @@ openshift: true
 
 # OpenShift Route configuration - used when openshift: true
 route:
-  host: quartz.nefast.me
+  host: nefast.me
   tls:
     termination: Edge
   annotations: {}
@@ -69,7 +69,7 @@ quartz:
       className: ""
       annotations: {}
       hosts:
-        - host: quartz.nefast.me
+        - host: nefast.me
           paths:
             - path: /
               pathType: Prefix

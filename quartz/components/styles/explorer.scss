@@ -156,7 +156,6 @@ button.desktop-explorer {
     overflow: hidden;
     margin-left: 6px;
     padding-left: 0.8rem;
-    border-left: 1px solid var(--lightgray);
   }
 }
 
@@ -204,8 +203,22 @@ button.desktop-explorer {
 }
 
 .explorer-item {
-    margin-top: 3px;
-    margin-bottom: 3px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.sidebar.left .explorer-item + .explorer-item {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -5px;
+    left: 0.25rem;
+    width: 3rem;
+    height: 1px;
+    background: linear-gradient(to right, var(--lightgray), transparent);
+  }
 }
 
 .folder-icon {
